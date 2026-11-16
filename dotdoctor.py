@@ -61,10 +61,35 @@ def check_config_errors():
     if out is None:
         add("info", "Hyprland not running — skipped live checks")
         return False
-    errs = [l for l in out.splitlines() if l.strip()]
+    # Lua errors come with "stack traceback:" and indented frame lines.
+    # Group those under the error they belong to instead of counting each one.
+    errs = []
+    for line in re.sub(r"\x1b\[[0-9;]*m", "", out).splitlines():
+        if not line.strip():
+            continue
+        if errs and (line[0].isspace() or line.startswith("stack traceback")):
+            continue  # traceback detail: the first line already says where
+        errs.append(line.strip())
     for e in errs:
-        add("error", "Hyprland config error", e, "Open the file/line above and fix the syntax.")
+        add("error", "Hyprland config error", f"  {tilde(e)}", lua_hint(e))
     return True
+
+SECTIONS = {"general", "decoration", "animations", "input", "gestures", "misc",
+            "binds", "dwindle", "master", "group", "cursor", "xwayland", "render", "ecosystem"}
+
+def lua_hint(err):
+    m = re.search(r"attempt to index a nil value \(global '(\w+)'\)", err)
+    if m and m.group(1) in SECTIONS:
+        s = m.group(1)
+        return (f"'{s}.something = ...' is old-style syntax. In Lua configs, options go inside "
+                f"hl.config():\n       hl.config({{ {s} = {{ rounding = 8 }} }})"
+                if s == "decoration" else
+                f"'{s}.something = ...' is old-style syntax. In Lua configs, write:\n"
+                f"       hl.config({{ {s} = {{ ... }} }})")
+    m = re.match(r"(.+?):(\d+):", err)
+    if m:
+        return f"Open {tilde(m.group(1))} at line {m.group(2)} and fix the problem described above."
+    return "Run  Hyprland --verify-config  to see the full error."
 
 # 2. keybinding conflicts --------------------------------------------------
 def check_bind_conflicts():
@@ -164,6 +189,15 @@ def setup_demo():
         'o.bind("SUPER + E", "Files", "thunar")\n'
         'o.bind("SUPER + B", "Browser", "firefox")\n'
         'o.bind("SUPER + SHIFT + W", "Wallpaper picker", "waypaper")\n')
+    # A classic migration mistake: old-style "section.option = value" in a Lua config.
+    looknfeel = hypr / "looknfeel.lua"
+    looknfeel.write_text(
+        "-- Look and feel overrides\n\n"
+        "hl.config({\n  general = {\n    gaps_in = 5,\n    gaps_out = 10,\n"
+        "    border_size = 2,\n  },\n})\n\n"
+        "-- Copied from an old blog post:\n"
+        "-- rounded corners\n\n"
+        "decoration.rounding = 8\n")
     for i, ts in enumerate(["20260301", "20260412", "20260520", "20260611"]):
         (hypr / f"hyprland.lua.bak.{ts}").write_text("")
     (CONFIG / "waybar").mkdir()
@@ -189,8 +223,12 @@ def setup_demo():
              b(8, "TAB", "Focus next window"), b(8, "TAB", "Bring window to top")]
     binds += [b(64, str(n), f"Workspace {n}") for n in range(1, 10)]
     DEMO_HYPR["binds"] = json.dumps(binds)
+    # Same shape as real Hyprland 0.56 output, traceback included.
     DEMO_HYPR["configerrors"] = (
-        "~/.config/hypr/looknfeel.lua:14: attempt to index a nil value (global 'decoration')\n")
+        f"{looknfeel}:14: attempt to index a nil value (global 'decoration')\n"
+        "stack traceback:\n"
+        f"\t{looknfeel}:14: in main chunk\n"
+        "\t[C]: in function 'require'\n")
 
 # report -------------------------------------------------------------------
 def main():

@@ -38,7 +38,9 @@
   .term { background: #0a0c10; color: #d8dbe3; border: 1px solid var(--line); border-radius: 12px;
           margin: 40px 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
   .term .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid #1d212a; }
-  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a2f3a; }
+  .term .bar { align-items: center; }
+  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a2f3a; flex: none; }
+  .term .bar .cap { margin-left: auto; font: 12px "JetBrains Mono", monospace; color: #6b7285; }
   .term pre { margin: 0; padding: 18px 20px; font: 13.5px/1.55 "JetBrains Mono", monospace;
               overflow-x: auto; white-space: pre; }
   .r { color: #ff6b6b; } .y { color: #f4c95d; } .g { color: #7ee0a1; } .d { color: #6b7285; } .b { font-weight: 700; color: #fff; }
@@ -85,23 +87,27 @@
   </header>
 
   <div class="term" aria-label="Example dotdoctor output">
-    <div class="bar"><i></i><i></i><i></i></div>
+    <div class="bar"><i></i><i></i><i></i><span class="cap">example output · dotdoctor --demo</span></div>
 <pre><span class="b">🩺 dotdoctor</span><span class="d">  — scanning your desktop config...</span>
 
 <span class="r">✖ ERROR</span>  <span class="b">Hyprland config error</span>
-<span class="d">~/.config/hypr/looknfeel.lua:14: attempt to index a nil value (global 'decoration')</span>
+<span class="d">  ~/.config/hypr/looknfeel.lua:14: attempt to index a nil value (global 'decoration')</span>
+<span class="g">  fix: </span>'decoration.something = ...' is old-style syntax. In Lua configs, options go inside hl.config():
+       hl.config({ decoration = { rounding = 8 } })
 
 <span class="y">▲ WARN </span>  <span class="b">SUPER + E fires 3 actions at once</span>
 <span class="d">  • Files (nautilus) — default
   • Files (thunar) — yours
   • Emoji picker — old config</span>
-<span class="g">  fix: </span>add  hl.unbind("SUPER + E")  in ~/.config/hypr/bindings.lua before re-binding it.
+<span class="g">  fix: </span>Fine if intentional. Otherwise add  hl.unbind("SUPER + E")  in ~/.config/hypr/bindings.lua before re-binding it.
 
 <span class="y">▲ WARN </span>  <span class="b">SUPER + B runs 'firefox', which isn't installed</span>
 <span class="g">  fix: </span>Install the package that provides 'firefox', or unbind SUPER + B.
 
 <span class="y">▲ WARN </span>  <span class="b">Broken symlink: ~/.config/nvim</span>
 <span class="d">  points to ~/old-dotfiles/nvim</span>
+
+<span class="d">  … 4 more findings</span>
 
 Scanned 16 keybindings, ~/.config.  <span class="r">1 error</span>, <span class="y">5 warnings</span>, 2 notes.</pre>
   </div>
