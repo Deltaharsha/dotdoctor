@@ -20,7 +20,7 @@ Track every Sunday:
 ## One-time setup (≈1 hour, £0–£12)
 
 1. ✅ GitHub repo created: github.com/Deltaharsha/dotdoctor
-2. Make a free form at formspree.io (or Tally). Replace `FORM_ID` in `docs/index.html`.
+2. ✅ Waitlist form connected (Formspree xwloldvd). Signups appear in your Formspree dashboard.
 3. ✅ Landing page on GitHub Pages: deltaharsha.github.io/dotdoctor
 4. Optional: buy `dotdoctor.dev` (~£10/yr), then replace `DOMAIN` in `README.md`.
 
