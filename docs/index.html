@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>dotdoctor — a checkup for your Linux desktop</title>
+<meta name="description" content="dotdoctor scans your Hyprland and dotfiles for conflicting keybindings, missing programs, broken symlinks and config errors — and tells you how to fix them.">
+<meta property="og:title" content="dotdoctor — a checkup for your Linux desktop">
+<meta property="og:description" content="Find conflicting keybinds, missing programs and broken configs in one command.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e6e8ee; --muted: #8b93a7;
+    --accent: #7ee0a1; --red: #ff6b6b; --yellow: #f4c95d; --dim: #6b7285;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f7f8fa; --panel: #ffffff; --line: #e3e6ec; --text: #161a22; --muted: #5a6275;
+      --accent: #17985a; --red: #d63c3c; --yellow: #b7860b; --dim: #8a90a0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 17px/1.6 Inter, system-ui, sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+  .logo { font: 700 18px "JetBrains Mono", monospace; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 15px; }
+  nav a:hover { color: var(--text); }
+  h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.1; margin: 48px 0 16px; letter-spacing: -0.02em; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .lede { color: var(--muted); font-size: 19px; max-width: 640px; }
+  .install { display: inline-flex; gap: 12px; align-items: center; margin: 24px 0 8px;
+             background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+             padding: 12px 16px; font: 15px "JetBrains Mono", monospace; max-width: 100%; overflow-x: auto; }
+  .install span { color: var(--dim); }
+  .term { background: #0a0c10; color: #d8dbe3; border: 1px solid var(--line); border-radius: 12px;
+          margin: 40px 0; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .term .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid #1d212a; }
+  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2a2f3a; }
+  .term pre { margin: 0; padding: 18px 20px; font: 13.5px/1.55 "JetBrains Mono", monospace;
+              overflow-x: auto; white-space: pre; }
+  .r { color: #ff6b6b; } .y { color: #f4c95d; } .g { color: #7ee0a1; } .d { color: #6b7285; } .b { font-weight: 700; color: #fff; }
+  h2 { font-size: 28px; margin: 64px 0 20px; letter-spacing: -0.01em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card h3 { margin: 0 0 6px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .plan { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 26px; }
+  .plan.pro { border-color: var(--accent); }
+  .price { font-size: 34px; font-weight: 800; margin: 6px 0 14px; }
+  .price small { font-size: 15px; color: var(--muted); font-weight: 400; }
+  .plan ul { padding-left: 20px; margin: 0; color: var(--muted); }
+  .plan li { margin: 6px 0; }
+  .tag { display: inline-block; font-size: 12px; font-weight: 600; color: var(--bg); background: var(--accent);
+         border-radius: 99px; padding: 2px 10px; }
+  form { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  input[type=email] { flex: 1 1 220px; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--line);
+                      background: var(--bg); color: var(--text); font: inherit; }
+  button { padding: 13px 20px; border: 0; border-radius: 10px; background: var(--accent); color: #0b1a12;
+           font: 600 16px Inter, sans-serif; cursor: pointer; }
+  button:hover { filter: brightness(1.08); }
+  .note { font-size: 14px; color: var(--dim); margin-top: 10px; }
+  .faq details { border-bottom: 1px solid var(--line); padding: 14px 0; }
+  .faq summary { cursor: pointer; font-weight: 600; }
+  .faq p { color: var(--muted); margin: 8px 0 0; }
+  footer { color: var(--dim); font-size: 14px; padding: 60px 0 40px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="logo">🩺 dotdoctor</div>
+    <div><a href="#pro">Pro</a> &nbsp;·&nbsp; <a href="https://github.com/Deltaharsha/dotdoctor">GitHub</a></div>
+  </nav>
+
+  <header>
+    <h1>A checkup for your<br><em>Linux desktop.</em></h1>
+    <p class="lede">dotdoctor scans your Hyprland setup and dotfiles for keybinds that fight each other, shortcuts that launch programs you don't have, broken symlinks and config errors. Then it tells you exactly how to fix them.</p>
+    <div class="install"><span>$</span> git clone https://github.com/Deltaharsha/dotdoctor &amp;&amp; ./dotdoctor/dotdoctor.py</div>
+    <p class="note">Free and open source. Works with Lua and classic Hyprland configs, including Omarchy.</p>
+  </header>
+
+  <div class="term" aria-label="Example dotdoctor output">
+    <div class="bar"><i></i><i></i><i></i></div>
+<pre><span class="b">🩺 dotdoctor</span><span class="d">  — scanning your desktop config...</span>
+
+<span class="r">✖ ERROR</span>  <span class="b">Hyprland config error</span>
+<span class="d">~/.config/hypr/looknfeel.lua:14: attempt to index a nil value (global 'decoration')</span>
+
+<span class="y">▲ WARN </span>  <span class="b">SUPER + E fires 3 actions at once</span>
+<span class="d">  • Files (nautilus) — default
+  • Files (thunar) — yours
+  • Emoji picker — old config</span>
+<span class="g">  fix: </span>add  hl.unbind("SUPER + E")  in ~/.config/hypr/bindings.lua before re-binding it.
+
+<span class="y">▲ WARN </span>  <span class="b">SUPER + B runs 'firefox', which isn't installed</span>
+<span class="g">  fix: </span>Install the package that provides 'firefox', or unbind SUPER + B.
+
+<span class="y">▲ WARN </span>  <span class="b">Broken symlink: ~/.config/nvim</span>
+<span class="d">  points to ~/old-dotfiles/nvim</span>
+
+Scanned 16 keybindings, ~/.config.  <span class="r">1 error</span>, <span class="y">5 warnings</span>, 2 notes.</pre>
+  </div>
+
+  <h2>What it checks</h2>
+  <div class="grid">
+    <div class="card"><h3>⌨️ Keybind conflicts</h3><p>Reads your live binds from Hyprland, so it sees what's actually active, not what you think is.</p></div>
+    <div class="card"><h3>👻 Missing programs</h3><p>Shortcuts pointing at apps you uninstalled or never had.</p></div>
+    <div class="card"><h3>🔗 Broken symlinks</h3><p>Leftovers from an old dotfiles repo or a stow gone wrong.</p></div>
+    <div class="card"><h3>🧹 Config clutter</h3><p>Piles of .bak files and errors Hyprland is quietly logging.</p></div>
+  </div>
+
+  <h2 id="pro">dotdoctor Pro <span class="tag">coming soon</span></h2>
+  <div class="plans">
+    <div class="plan">
+      <h3>Free</h3>
+      <div class="price">£0</div>
+      <ul>
+        <li>All checks, run locally</li>
+        <li>Clear fix suggestions</li>
+        <li>Open source, no account</li>
+      </ul>
+    </div>
+    <div class="plan pro">
+      <h3>Pro</h3>
+      <div class="price">£4 <small>/ month</small></div>
+      <ul>
+        <li><b>AI explain:</b> plain-English “why is this broken?”</li>
+        <li><b>One-command fixes</b> with automatic undo</li>
+        <li><b>Update guard:</b> warns before a package update breaks your config</li>
+        <li>Health checks across all your machines</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Join the Pro waitlist</h2>
+  <p class="lede" style="font-size:17px">Early waitlist members get Pro at <b>half price for life</b>.</p>
+  <!-- Replace FORM_ID with your free Formspree form id (formspree.io), or point at Tally/Buttondown. -->
+  <form action="https://formspree.io/f/FORM_ID" method="POST">
+    <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address">
+    <input type="hidden" name="source" value="landing">
+    <button type="submit">Get early access</button>
+  </form>
+  <p class="note">One email when Pro launches. No spam, unsubscribe any time.</p>
+
+  <h2>FAQ</h2>
+  <div class="faq">
+    <details><summary>Does it change my files?</summary><p>No. The free version only reads your config and prints suggestions. Pro fixes are opt-in and always back up first.</p></details>
+    <details><summary>Which setups does it support?</summary><p>Hyprland today (including Omarchy's Lua config). Sway, i3, Waybar and Neovim checks are on the roadmap. Tell us what you want next when you join the waitlist.</p></details>
+    <details><summary>Does my config get uploaded anywhere?</summary><p>The free version runs 100% locally. Pro's AI explain only sends the specific finding you ask about, never your whole config.</p></details>
+  </div>
+
+  <footer>Made by a Hyprland user, for Hyprland users. · <a href="https://github.com/Deltaharsha/dotdoctor">Star on GitHub</a></footer>
+</div>
+</body>
+</html>
